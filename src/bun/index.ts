@@ -46,7 +46,7 @@ const rpc = BrowserView.defineRPC({
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
-              const text = decoder.decode(value, { stream: true });
+              const text = decoder.decode(value, { stream: true }).replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
               if (text) {
                 (rpc as any).send.commandOutput({ id, data: text, type });
               }
@@ -95,6 +95,10 @@ const rpc = BrowserView.defineRPC({
         writer.write(new TextEncoder().encode(data));
         writer.releaseLock();
         return { success: true };
+      },
+
+      getDefaultCwd() {
+        return { cwd: process.env.HOME || process.cwd() };
       },
     },
   },

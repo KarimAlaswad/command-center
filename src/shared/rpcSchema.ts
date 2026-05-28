@@ -19,6 +19,10 @@ export type BunRequests = {
     params: { id: string; data: string };
     response: { success: boolean };
   };
+  getDefaultCwd: {
+    params: Record<string, never>;
+    response: { cwd: string };
+  }
 };
 export type BunMessages = {
   commandOutput: { id: string; data: string; type: "stdout" | "stderr" };

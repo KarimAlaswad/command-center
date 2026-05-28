@@ -8,12 +8,18 @@ type CommandCardProps = {
   description: string;
   command: string;
   cwd: string;
+  defaultCwd: string;
   output: OutputLine[];
   isRunning: boolean;
   exitCode: number | null;
   onUpdate: (
     id: string,
-    updates: Partial<{ name: string; description: string; command: string; cwd: string }>,
+    updates: Partial<{
+      name: string;
+      description: string;
+      command: string;
+      cwd: string;
+    }>,
   ) => void;
   onRun: (id: string) => void;
   onKill: (id: string) => void;
@@ -27,6 +33,7 @@ export default function CommandCard({
   description,
   command,
   cwd,
+  defaultCwd,
   output,
   isRunning,
   exitCode,
@@ -42,9 +49,10 @@ export default function CommandCard({
 
   useEffect(() => {
     if (outputRef.current) {
-      const el = outputRef.current;
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-      if (nearBottom) el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => {
+        if (!outputRef.current) return;
+        outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      });
     }
   }, [output]);
 
@@ -157,7 +165,7 @@ export default function CommandCard({
       </div>
       <div className="px-3 pb-1">
         <span className="text-xs text-gray-500">cwd: </span>
-        {renderEditable("cwd", cwd, "text-xs text-gray-400 font-mono")}
+        {renderEditable("cwd", cwd || defaultCwd, "text-xs text-gray-400 font-mono")}
       </div>
       {/* Collapse toggle */}
       {output.length > 0 && (
@@ -165,7 +173,7 @@ export default function CommandCard({
           onClick={() => setOutputVisible(v => !v)}
           className="px-3 text-xs text-gray-500 hover:text-gray-300 text-left"
         >
-          {outputVisible ? "▼" : "▶"} Output ({output.length} lines)
+          {outputVisible ? "▼" : "▶"} Output
         </button>
       )}
 
@@ -174,7 +182,7 @@ export default function CommandCard({
         <div className="px-3 pb-3 flex-1">
           <pre
             ref={outputRef}
-            className="bg-gray-950 text-green-300 font-mono text-xs rounded p-2 h-40 overflow-y-auto whitespace-pre-wrap break-all"
+            className="bg-gray-950 text-green-300 font-mono text-xs rounded p-2 min-h-40 overflow-y-auto whitespace-pre-wrap break-all resize-y"
           >
             {output.map((line, i) => (
               <span
