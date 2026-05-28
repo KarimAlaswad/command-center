@@ -10,5 +10,5 @@ GUI for running terminal commands. Built with Electrobun + React + Tailwind.
 ## Usage
 ```bash
 bun run dev:hmr
-Build
+# Build
 bun run build:canary
