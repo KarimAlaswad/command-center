@@ -11,6 +11,7 @@ type CardData = {
   cwd: string;
   output: OutputLine[];
   isRunning: boolean;
+  exitCode: number | null;
 };
 
 export default function App() {
@@ -39,7 +40,7 @@ export default function App() {
 
     const onExit = (payload: { id: string; code: number }) => {
       setCards((prev) =>
-        prev.map((c) => (c.id === payload.id ? { ...c, isRunning: false } : c)),
+        prev.map((c) => (c.id === payload.id ? { ...c, isRunning: false, exitCode: payload.code } : c)),
       );
     };
     rpc.addMessageListener("commandOutput", onOutput);
@@ -80,6 +81,7 @@ export default function App() {
         cwd: card.cwd,
         output: [],
         isRunning: false,
+        exitCode: null,
       },
     ]);
   }
@@ -96,7 +98,7 @@ export default function App() {
     if (!card) return;
     setCards((prev) =>
       prev.map((c) =>
-        c.id === id ? { ...c, isRunning: true, output: [] } : c,
+        c.id === id ? { ...c, isRunning: true, output: [], exitCode: null } : c,
       ),
     );
     (rpc as any).request.executeCommand({ id, command: card.command, cwd: card.cwd });

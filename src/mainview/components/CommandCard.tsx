@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import rpc  from "../rpc";
+
 type OutputLine = { data: string; type: "stdout" | "stderr" };
 type CommandCardProps = {
   id: string;
@@ -8,6 +10,7 @@ type CommandCardProps = {
   cwd: string;
   output: OutputLine[];
   isRunning: boolean;
+  exitCode: number | null;
   onUpdate: (
     id: string,
     updates: Partial<{ name: string; description: string; command: string; cwd: string }>,
@@ -16,6 +19,7 @@ type CommandCardProps = {
   onKill: (id: string) => void;
   onDelete: (id: string) => void;
 };
+
 type EditableField = "name" | "description" | "command" | "cwd" | null;
 export default function CommandCard({
   id,
@@ -25,6 +29,7 @@ export default function CommandCard({
   cwd,
   output,
   isRunning,
+  exitCode,
   onUpdate,
   onRun,
   onKill,
@@ -32,12 +37,17 @@ export default function CommandCard({
 }: CommandCardProps) {
   const [editing, setEditing] = useState<EditableField>(null);
   const [editValue, setEditValue] = useState("");
+  const [outputVisible, setOutputVisible] = useState(true);
   const outputRef = useRef<HTMLPreElement>(null);
+
   useEffect(() => {
     if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      const el = outputRef.current;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+      if (nearBottom) el.scrollTop = el.scrollHeight;
     }
   }, [output]);
+
   function startEdit(field: EditableField, current: string) {
     setEditing(field);
     setEditValue(current);
@@ -46,6 +56,10 @@ export default function CommandCard({
     if (editing) onUpdate(id, { [editing]: editValue });
     setEditing(null);
   }
+  function handleDelete() {
+    if (confirm(`Delete "${name}"?`)) onDelete(id);
+  }
+
   function renderEditable(
     field: EditableField,
     value: string,
@@ -78,6 +92,7 @@ export default function CommandCard({
         />
       );
     }
+
     return (
       <span
         onDoubleClick={() => startEdit(field, value)}
@@ -87,8 +102,13 @@ export default function CommandCard({
       </span>
     );
   }
+  
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg w-80 flex flex-col border border-gray-700">
+    <div className="bg-gray-800 rounded-lg shadow-lg w-80 flex flex-col border border-gray-700"
+      tabIndex={0}
+      onKeyDown={ e => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) onRun(id);
+      }}>
       {/* Header */}
       <div className="flex items-start justify-between p-3 border-b border-gray-700">
         <div className="flex-1 min-w-0 mr-2">
@@ -98,7 +118,7 @@ export default function CommandCard({
           {isRunning ? (
             <button
               onClick={() => onKill(id)}
-              className="text-red-400 hover:text-red-300 text-lg"
+              className="text-red-400 animate-pulse hover:text-red-300 text-lg"
               title="Kill"
             >
               ■
@@ -113,7 +133,7 @@ export default function CommandCard({
             </button>
           )}
           <button
-            onClick={() => onDelete(id)}
+            onClick={handleDelete}
             className="text-gray-500 hover:text-red-400 text-lg"
             title="Delete"
           >
@@ -139,8 +159,18 @@ export default function CommandCard({
         <span className="text-xs text-gray-500">cwd: </span>
         {renderEditable("cwd", cwd, "text-xs text-gray-400 font-mono")}
       </div>
-      {/* Terminal Output */}
+      {/* Collapse toggle */}
       {output.length > 0 && (
+        <button 
+          onClick={() => setOutputVisible(v => !v)}
+          className="px-3 text-xs text-gray-500 hover:text-gray-300 text-left"
+        >
+          {outputVisible ? "▼" : "▶"} Output ({output.length} lines)
+        </button>
+      )}
+
+      {/* Terminal Output */}
+      {outputVisible && output.length > 0 && (
         <div className="px-3 pb-3 flex-1">
           <pre
             ref={outputRef}
@@ -155,6 +185,32 @@ export default function CommandCard({
               </span>
             ))}
           </pre>
+        </div>
+      )}
+
+      {/* Exit code display */}
+      {exitCode !== null && !outputVisible && (
+        <div className="px-3 pb-2">
+          <span className={exitCode === 0 ? "text-green-400" : "text-red-400"}>
+            {exitCode === 0 ? "✓ Exited 0" : `✕ Exit ${exitCode}`}
+          </span>
+        </div>
+      )}
+      {isRunning && (
+        <div className="px-3 pb-2 flex gap-1">
+          <input
+            placeholder="Type input and press Enter..."
+            className="flex-1 bg-gray-950 text-green-300 font-mono text-xs rounded px-2 py-1 border border-gray-700 placeholder-gray-600 outline-none focus:border-green-500"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const input = e.currentTarget.value;
+                if (input) {
+                  (rpc as any).request.sendStdin({ id, data: input + "\n" });
+                }
+                e.currentTarget.value = "";
+              }
+            }}
+          />
         </div>
       )}
     </div>

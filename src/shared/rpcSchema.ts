@@ -15,6 +15,10 @@ export type BunRequests = {
     params: { cards: unknown[] };
     response: { success: boolean };
   };
+  sendStdin: {
+    params: { id: string; data: string };
+    response: { success: boolean };
+  };
 };
 export type BunMessages = {
   commandOutput: { id: string; data: string; type: "stdout" | "stderr" };

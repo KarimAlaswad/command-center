@@ -32,7 +32,7 @@ const rpc = BrowserView.defineRPC({
 				const resolvedCwd = cwd || process.env.HOME || process.cwd();
         const proc = Bun.spawn(["bash", "-c", command], {
 					cwd: resolvedCwd,
-          stdio: ["ignore", "pipe", "pipe"],
+          stdio: ["pipe", "pipe", "pipe"],
           env: { ...process.env },
         });
         runningProcesses.set(id, proc);
@@ -86,6 +86,15 @@ const rpc = BrowserView.defineRPC({
           return { success: true };
         }
         return { success: false };
+      },
+      
+      sendStdin({ id, data }: { id: string; data: string }) {
+        const proc = runningProcesses.get(id);
+        if (!proc || !proc.stdin) return { success: false };
+        const writer = proc.stdin.getWriter();
+        writer.write(new TextEncoder().encode(data));
+        writer.releaseLock();
+        return { success: true };
       },
     },
   },
