@@ -185,12 +185,12 @@ export default function CommandCard({
             className="bg-gray-950 text-green-300 font-mono text-xs rounded p-2 min-h-40 overflow-y-auto whitespace-pre-wrap break-all resize-y"
           >
             {output.map((line, i) => (
-              <span
+              <div
                 key={i}
                 className={line.type === "stderr" ? "text-red-400" : ""}
               >
                 {line.data}
-              </span>
+              </div>
             ))}
           </pre>
         </div>

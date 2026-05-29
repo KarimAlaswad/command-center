@@ -16,6 +16,7 @@ type CardData = {
 
 export default function App() {
   const [cards, setCards] = useState<CardData[]>([]);
+  const [defaultCwd, setDefaultCwd] = useState("");
   // Listen for streaming output and exit from Bun
   useEffect(() => {
     const onOutput = (payload: {
@@ -23,6 +24,8 @@ export default function App() {
       data: string;
       type: "stdout" | "stderr";
     }) => {
+      const lines = payload.data.split("\n");
+      if (lines[lines.length -1] === "") lines.pop();
       setCards((prev) =>
         prev.map((c) =>
           c.id === payload.id
@@ -30,12 +33,15 @@ export default function App() {
                 ...c,
                 output: [
                   ...c.output,
-                  { data: payload.data, type: payload.type },
+                  ...lines.map((line) => ({
+                    data: line,
+                    type: payload.type,
+                  })),
                 ],
               }
             : c,
-        ),
-      );
+          ),
+        );
     };
 
     const onExit = (payload: { id: string; code: number }) => {
@@ -49,6 +55,12 @@ export default function App() {
       rpc.removeMessageListener("commandOutput", onOutput);
       rpc.removeMessageListener("commandExit", onExit);
     };
+  }, []);
+
+  useEffect(() => {
+    (rpc as any).request.getDefaultCwd().then((result: { cwd: string }) => {
+      if (result.cwd) setDefaultCwd(result.cwd);
+    });
   }, []);
 
   useEffect(() => {
@@ -120,6 +132,7 @@ export default function App() {
           <CommandCard
             key={card.id}
             {...card}
+            defaultCwd={defaultCwd}
             onUpdate={handleUpdate}
             onRun={handleRun}
             onKill={handleKill}
