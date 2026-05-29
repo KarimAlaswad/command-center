@@ -112,7 +112,7 @@ export default function CommandCard({
   }
   
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg w-80 flex flex-col border border-gray-700"
+    <div className="bg-gray-800 rounded-lg shadow-lg flex flex-col border border-gray-700"
       tabIndex={0}
       onKeyDown={ e => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) onRun(id);
@@ -182,7 +182,7 @@ export default function CommandCard({
         <div className="px-3 pb-3 flex-1">
           <pre
             ref={outputRef}
-            className="bg-gray-950 text-green-300 font-mono text-xs rounded p-2 min-h-40 overflow-y-auto whitespace-pre-wrap break-all resize-y"
+            className="bg-gray-950 text-green-300 font-mono text-xs rounded p-2 min-h-40 min-w-40 overflow-y-auto whitespace-pre-wrap break-all resize"
           >
             {output.map((line, i) => (
               <div

@@ -127,7 +127,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <h1 className="text-2xl font-bold text-white mb-6">Command Runner</h1>
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 items-start">
         {cards.map((card) => (
           <CommandCard
             key={card.id}
